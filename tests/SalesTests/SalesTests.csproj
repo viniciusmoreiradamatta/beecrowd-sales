@@ -19,6 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\src\SalesApplication\SalesApplication.csproj" />
     <ProjectReference Include="..\..\src\SalesDomain\SalesDomain.csproj" />
   </ItemGroup>
 
