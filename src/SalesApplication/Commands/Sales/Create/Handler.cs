@@ -3,13 +3,15 @@ using Microsoft.Extensions.Logging;
 using SalesDomain.Abstractions;
 using SalesDomain.Abstractions.Response;
 using SalesDomain.Entities.Sale;
+using SalesDomain.Events.Sales;
+using SalesDomain.Interfaces.Message;
 using SalesDomain.Interfaces.Repository;
 using SalesDomain.Interfaces.UnitOfWork;
 
 namespace SalesApplication.Commands.Sales.Create;
 
 public class Handler(ISaleRepository saleRepotory, IUnitOfWork unitOfWork, IDateTimeProvider dateTimeProvider,
-                     ILogger<Handler> logger) : IRequestHandler<Command, Result<Response>>
+                     IProducer producer, ILogger<Handler> logger) : IRequestHandler<Command, Result<Response>>
 {
     public async Task<Result<Response>> Handle(Command request, CancellationToken cancellationToken)
     {
@@ -27,6 +29,8 @@ public class Handler(ISaleRepository saleRepotory, IUnitOfWork unitOfWork, IDate
             await saleRepotory.Create(sale, cancellationToken);
 
             await unitOfWork.CommitAsync(cancellationToken);
+
+            await producer.Notify(new SaleCreatedEvent(sale.Id, sale.BranchId, sale.TotalAmount, dateTimeProvider.UtcNow));
 
             return Result<Response>.CreateSuccessResponse(Response.MapToResponse(sale), "Sale succesfuly created");
         }

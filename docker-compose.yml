@@ -22,10 +22,19 @@ services:
     container_name: sales-api
     depends_on:
       - db
+      - rabbitmq
+
     ports:
       - "8090:8090"
     environment:
      ConnectionStrings__SalesApiDb: Host=db;Database=SalesApiDb;Username=postgres;Password=admin
+     RABBITMQ__PREFETCHCOUNT: 2000
+     RABBITMQ__HOSTNAME: rabbitmq
+     RABBITMQ__PORT: 5672
+     RABBITMQ__USERNAME: usuarioMaster
+     RABBITMQ__PASSWORD: s3nh40k
+     RABBITMQ__VIRTUALHOST: main
+     RABBITMQ__DISPATCHCONSUMERSASYNC: "true"
 
     networks:
       - evaluation-network
@@ -41,6 +50,17 @@ services:
       - "5432:5432"
     networks:
       - evaluation-network
+
+  rabbitmq:
+   hostname: rabbitmq
+   build:
+    context: ./rabbit
+   ports:
+    - "15672:15672"
+    - "5672:5672" 
+    - "15692:15692" 
+   networks:
+    - evaluation-network
 
 networks:
   evaluation-network:

@@ -2,7 +2,10 @@
 using NSubstitute;
 using NSubstitute.ExceptionExtensions;
 using SalesApplication.Commands.Products.Create;
+using SalesDomain.Abstractions;
 using SalesDomain.Entities.Product;
+using SalesDomain.Events.Products;
+using SalesDomain.Interfaces.Message;
 using SalesDomain.Interfaces.Repository;
 using SalesDomain.Interfaces.UnitOfWork;
 
@@ -14,11 +17,13 @@ public class HandlerTests
     private readonly IProductRepository _productRepository;
     private readonly IUnitOfWork unitOfWork = Substitute.For<IUnitOfWork>();
     private readonly ILogger<Handler> _logger = Substitute.For<ILogger<Handler>>();
+    private readonly IProducer _producer = Substitute.For<IProducer>();
+    private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>();
 
     public HandlerTests()
     {
         _productRepository = Substitute.For<IProductRepository>();
-        _sut = new Handler(_productRepository, unitOfWork, _logger);
+        _sut = new Handler(_productRepository, unitOfWork, _producer, _dateTimeProvider, _logger);
     }
 
     [Fact]
@@ -43,6 +48,8 @@ public class HandlerTests
                                                                          p.Category == request.Category &&
                                                                          p.Image == request.Image),
                                                     Arg.Any<CancellationToken>());
+
+        await _producer.Received(1).Notify(Arg.Any<ProductCreatedEvent>());
     }
 
     [Fact]
