@@ -23,6 +23,7 @@ services:
     depends_on:
       - db
       - rabbitmq
+      - redisservice
 
     ports:
       - "8090:8090"
@@ -31,11 +32,12 @@ services:
      RABBITMQ__PREFETCHCOUNT: 2000
      RABBITMQ__HOSTNAME: rabbitmq
      RABBITMQ__PORT: 5672
-     RABBITMQ__USERNAME: usuarioMaster
-     RABBITMQ__PASSWORD: s3nh40k
+     RABBITMQ__USERNAME: userMaster
+     RABBITMQ__PASSWORD: p455w0rd
      RABBITMQ__VIRTUALHOST: main
      RABBITMQ__DISPATCHCONSUMERSASYNC: "true"
-
+     REDIS__INSTANCENAME: sales_api_cache
+     REDIS__CONFIGURATION: redisservice:6379,password=Redi5p455w0rd!,abortConnect=false
     networks:
       - evaluation-network
   
@@ -61,6 +63,34 @@ services:
     - "15692:15692" 
    networks:
     - evaluation-network
+
+  prometheus:
+   image: prom/prometheus
+   ports:
+     - "9090:9090"
+   volumes:
+     - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+   networks:
+    - evaluation-network
+
+  grafana:
+   image: grafana/grafana:8.0.5-ubuntu
+   environment: { "TZ": "America/Sao_Paulo" }
+   ports:
+     - "3000:3000"
+   volumes:
+     - ./grafana/data/:/var/lib/grafana
+   networks:
+    - evaluation-network
+
+  redisservice:
+    image: redis
+    command: redis-server --requirepass Redi5p455w0rd!
+    ports:
+      - "6379:6379"
+    networks:
+    - evaluation-network
+
 
 networks:
   evaluation-network:

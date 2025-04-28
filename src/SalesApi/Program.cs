@@ -1,3 +1,4 @@
+using Prometheus;
 using SalesApi.Configuration;
 using SalesApi.Endpoints;
 
@@ -18,5 +19,14 @@ if (app.Environment.IsDevelopment())
 }
 
 app.MapEndpoints();
+
+app.UseHttpMetrics();
+
+app.UseRouting();
+
+app.UseEndpoints(endpoints =>
+{
+    endpoints.MapMetrics();
+});
 
 await app.RunAsync();

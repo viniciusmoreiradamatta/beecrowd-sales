@@ -17,6 +17,11 @@ public class Result
 
 public class Result<T> : Result
 {
+    [JsonConstructorAttribute]
+    protected Result()
+    {
+    }
+
     public T Data { get; set; } = default;
 
     private Result(T data, EStatusResponse status, string message)

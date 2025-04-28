@@ -9,10 +9,9 @@ public class DeleteSaleEndpoint : IEndpointMapper
     public static void Map(IEndpointRouteBuilder app)
     {
         app.MapDelete("/{id}", HandleAsync)
-            .WithName("Sales: Delete")
-            .WithDescription("Delete a sale")
-            .WithSummary("Delete a sale")
-            ;
+           .WithName("Sales: Delete")
+           .WithDescription("Delete a sale")
+           .WithSummary("Delete a sale");
     }
 
     private static async Task<IResult> HandleAsync([FromServices] ISender sender, Guid id, CancellationToken cancellationToken)

@@ -10,9 +10,9 @@ public class CreateProductEndpoint : IEndpointMapper
     public static void Map(IEndpointRouteBuilder app)
     {
         app.MapPost("", HandleAsync)
-            .WithName("Product: create")
-            .WithDescription("Create a new product")
-            .WithSummary("Create a new product");
+           .WithName("Product: create")
+           .WithDescription("Create a new product")
+           .WithSummary("Create a new product");
     }
 
     private static async Task<IResult> HandleAsync([FromServices] ISender sender,

@@ -1,9 +1,11 @@
-﻿using SalesDomain.Events.Sales;
+﻿using Microsoft.Extensions.Caching.Distributed;
+using SalesApi.Configuration;
+using SalesDomain.Events.Sales;
 using SalesDomain.Interfaces.Message;
 
 namespace SalesApi.Workers;
 
-public class SaleCreatedWorker(IServiceProvider serviceProvider, ILogger<SaleCreatedWorker> logger) : BackgroundService
+public class SaleCreatedWorker(IServiceProvider serviceProvider, IDistributedCache cache, ILogger<SaleCreatedWorker> logger) : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -15,10 +17,12 @@ public class SaleCreatedWorker(IServiceProvider serviceProvider, ILogger<SaleCre
 
             var consumer = provider.GetRequiredService<IConsumer>();
 
-            await consumer.Receive("sales_api_SaleCreated_queue", (SaleCreatedEvent @event) =>
+            await consumer.Receive("sales_api_SaleCreated_queue", async (SaleCreatedEvent @event) =>
             {
-                Console.WriteLine($"Event received {@event.Id} - {@event.OccurredOn} - {@event.BranchId} - {@event.TotalAmount}");
-                return Task.CompletedTask;
+                logger.LogInformation("Event received {EventId} - {EventOccurredOn} - {EventBranchId} - {EventTotalAmount}",
+                                                      @event.Id, @event.OccurredOn, @event.BranchId, @event.TotalAmount);
+
+                await cache.RemoveAsync(Constants.SalesCacheKey, stoppingToken);
             });
         }
         catch (Exception ex)
