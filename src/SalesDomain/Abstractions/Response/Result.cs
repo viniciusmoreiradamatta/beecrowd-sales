@@ -6,9 +6,12 @@ public class Result
 {
     public EStatusResponse Status { get; set; }
     public string? Message { get; set; }
+    public string? Detais { get; set; }
 
     [JsonIgnore]
     public bool IsSuccess => Status == EStatusResponse.Success;
+
+    public static Result CreateErrorResponse(string message, EStatusResponse status, string? detais = null) => new() { Status = status, Message = message, Detais = detais };
 
     public static Result CreateErrorResponse(string message) => new() { Status = EStatusResponse.Error, Message = message };
 
@@ -37,6 +40,10 @@ public class Result<T> : Result
         Message = message;
     }
 
+    public static Result<T> CreateResponse(string message, EStatusResponse status, string? detais = null) => new() { Status = status, Message = message, Detais = detais };
+
+    public static Result<T> CreateErrorResponse(string message, EStatusResponse status) => new(status, message);
+
     public static Result<T> CreateErrorResponse(string message) => new(EStatusResponse.Error, message);
 
     public static Result<T> CreateSuccessResponse(T data, string? message = null) => new(data, EStatusResponse.Success, message);
@@ -45,5 +52,7 @@ public class Result<T> : Result
 public enum EStatusResponse
 {
     Success,
+    InvalidData,
+    NotFound,
     Error
 }

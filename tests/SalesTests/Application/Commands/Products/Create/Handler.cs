@@ -1,6 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
 using NSubstitute;
-using NSubstitute.ExceptionExtensions;
 using SalesApplication.Commands.Products.Create;
 using SalesDomain.Abstractions;
 using SalesDomain.Entities.Product;
@@ -53,32 +52,6 @@ public class HandlerTests
     }
 
     [Fact]
-    public async Task Handle_WhenRepositoryThrowsException_ShouldReturnErrorResponse()
-    {
-        // Arrange
-        var request = ProductFaker.CreateValidCommand();
-        var exception = new Exception("Database connection failed");
-
-        _productRepository.Create(Arg.Any<Product>(), Arg.Any<CancellationToken>())
-                          .ThrowsAsync(exception);
-
-        // Act
-        var result = await _sut.Handle(request, CancellationToken.None);
-
-        // Assert
-        Assert.False(result.IsSuccess);
-        Assert.Equal("An unexpectd error occour while creating sale. Please try again later!", result.Message);
-
-        await _productRepository.Received(1).Create(Arg.Any<Product>(), Arg.Any<CancellationToken>());
-
-        _logger.Received().Log(LogLevel.Error,
-                               Arg.Any<EventId>(),
-                               Arg.Any<object>(),
-                               Arg.Any<Exception>(),
-                               Arg.Any<Func<object, Exception, string>>());
-    }
-
-    [Fact]
     public async Task Handle_WithInvalidProductData_ShouldReturnErrorResponse()
     {
         // Arrange
@@ -90,7 +63,7 @@ public class HandlerTests
         // Assert
         Assert.False(result.IsSuccess);
         Assert.NotNull(result.Message);
-        Assert.Contains("Price", result.Message);
+        Assert.Contains("Invalid product", result.Message);
 
         await _productRepository.DidNotReceiveWithAnyArgs().Create(default!, default);
     }

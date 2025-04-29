@@ -1,6 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
 using NSubstitute;
-using NSubstitute.ExceptionExtensions;
 using SalesApplication.Commands.Sales.Delete;
 using SalesDomain.Abstractions;
 using SalesDomain.Entities.Sale;
@@ -48,44 +47,13 @@ namespace SalesTests.Application.Commands.Sales.Delete
 
             Assert.True(sale.Cancelled);
 
-            _producer.Received(1).Notify(Arg.Is<SaleCancelledEvent>(e => e.OccurredOn == expectedDate && e.Id == command.Id));
+            await _producer.Received(1).Notify(Arg.Is<SaleCancelledEvent>(e => e.OccurredOn == expectedDate && e.Id == command.Id));
 
             _logger.DidNotReceiveWithAnyArgs().Log(LogLevel.Error,
                                                    Arg.Any<EventId>(),
                                                    Arg.Any<object>(),
                                                    Arg.Any<Exception>(),
                                                    Arg.Any<Func<object, Exception, string>>());
-        }
-
-        [Fact]
-        public async Task Handle_WhenServiceBusFails_ShouldLogButReturnSuccess()
-        {
-            // Arrange
-            var command = new Command(Guid.NewGuid());
-
-            var sale = SaleFaker.CreateSale();
-
-            var exception = new Exception("Service Bus error");
-
-            _saleRepository.GetById(command.Id, Arg.Any<CancellationToken>()).Returns(sale);
-
-            _producer.Notify(Arg.Any<SaleCancelledEvent>()).ThrowsAsync(exception);
-
-            // Act
-            var result = await _sut.Handle(command, CancellationToken.None);
-
-            // Assert
-            Assert.False(result.IsSuccess);
-
-            Assert.Equal("An unexpectd error occour while canceling sell. Please try again later!", result.Message);
-
-            _logger.Received(1).Log(LogLevel.Error,
-                                    Arg.Any<EventId>(),
-                                    Arg.Any<object>(),
-                                    Arg.Is<Exception>(e => e.Message == "Service Bus error"),
-                                    Arg.Any<Func<object, Exception, string>>());
-
-            Assert.True(sale.Cancelled);
         }
 
         [Fact]

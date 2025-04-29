@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Configuration;
+using SalesApi.Middlewares;
 using SalesApi.Services;
 using SalesApi.Workers;
 using SalesApplication.Configuration;
@@ -27,6 +28,7 @@ public static class DependencyInjection
         app.Services.AddHostedService<ProductCreatedWorker>();
 
         app.Services.AddScoped<ICacheService, CacheService>();
+
 
         await provider.ApplyMigration();
     }

@@ -17,26 +17,17 @@ public class Handler(ISaleRepository saleRepository,
 {
     public async Task<Result> Handle(Command command, CancellationToken cancellationToken)
     {
-        try
-        {
-            var sale = await saleRepository.GetById(command.Id, cancellationToken);
+        var sale = await saleRepository.GetById(command.Id, cancellationToken);
 
-            if (sale is null)
-                return Result.CreateErrorResponse("Sell not found");
+        if (sale is null)
+            return Result.CreateErrorResponse("Sell not found", EStatusResponse.NotFound);
 
-            sale.Cancel();
+        sale.Cancel();
 
-            await unitOfWork.CommitAsync(cancellationToken);
+        await unitOfWork.CommitAsync(cancellationToken);
 
-            await producer.Notify(new SaleCancelledEvent(provider.UtcNow, command.Id));
+        await producer.Notify(new SaleCancelledEvent(provider.UtcNow, command.Id));
 
-            return Result.CreateSuccessResponse("Sell Cancelled");
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, ex.ToString());
-
-            return Result.CreateErrorResponse("An unexpectd error occour while canceling sell. Please try again later!");
-        }
+        return Result.CreateSuccessResponse("Sell Cancelled");
     }
 }

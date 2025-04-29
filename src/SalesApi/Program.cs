@@ -1,6 +1,7 @@
 using Prometheus;
 using SalesApi.Configuration;
 using SalesApi.Endpoints;
+using SalesApi.Middlewares;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,6 +12,8 @@ builder.Services.AddSwaggerGen();
 await builder.AddSalesDependencies();
 
 var app = builder.Build();
+
+app.UseMiddleware<ExceptionMiddleware>();
 
 if (app.Environment.IsDevelopment())
 {
