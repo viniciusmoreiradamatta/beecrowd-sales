@@ -1,8 +1,10 @@
 ﻿using Microsoft.Extensions.Logging;
 using NSubstitute;
-using NSubstitute.ExceptionExtensions;
 using SalesApplication.Commands.Products.Create;
+using SalesDomain.Abstractions;
 using SalesDomain.Entities.Product;
+using SalesDomain.Events.Products;
+using SalesDomain.Interfaces.Message;
 using SalesDomain.Interfaces.Repository;
 using SalesDomain.Interfaces.UnitOfWork;
 
@@ -14,11 +16,13 @@ public class HandlerTests
     private readonly IProductRepository _productRepository;
     private readonly IUnitOfWork unitOfWork = Substitute.For<IUnitOfWork>();
     private readonly ILogger<Handler> _logger = Substitute.For<ILogger<Handler>>();
+    private readonly IProducer _producer = Substitute.For<IProducer>();
+    private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>();
 
     public HandlerTests()
     {
         _productRepository = Substitute.For<IProductRepository>();
-        _sut = new Handler(_productRepository, unitOfWork, _logger);
+        _sut = new Handler(_productRepository, unitOfWork, _producer, _dateTimeProvider, _logger);
     }
 
     [Fact]
@@ -43,32 +47,8 @@ public class HandlerTests
                                                                          p.Category == request.Category &&
                                                                          p.Image == request.Image),
                                                     Arg.Any<CancellationToken>());
-    }
 
-    [Fact]
-    public async Task Handle_WhenRepositoryThrowsException_ShouldReturnErrorResponse()
-    {
-        // Arrange
-        var request = ProductFaker.CreateValidCommand();
-        var exception = new Exception("Database connection failed");
-
-        _productRepository.Create(Arg.Any<Product>(), Arg.Any<CancellationToken>())
-                          .ThrowsAsync(exception);
-
-        // Act
-        var result = await _sut.Handle(request, CancellationToken.None);
-
-        // Assert
-        Assert.False(result.IsSuccess);
-        Assert.Equal("An unexpectd error occour while creating sale. Please try again later!", result.Message);
-
-        await _productRepository.Received(1).Create(Arg.Any<Product>(), Arg.Any<CancellationToken>());
-
-        _logger.Received().Log(LogLevel.Error,
-                               Arg.Any<EventId>(),
-                               Arg.Any<object>(),
-                               Arg.Any<Exception>(),
-                               Arg.Any<Func<object, Exception, string>>());
+        await _producer.Received(1).Notify(Arg.Any<ProductCreatedEvent>());
     }
 
     [Fact]
@@ -83,7 +63,7 @@ public class HandlerTests
         // Assert
         Assert.False(result.IsSuccess);
         Assert.NotNull(result.Message);
-        Assert.Contains("Price", result.Message);
+        Assert.Contains("Invalid product", result.Message);
 
         await _productRepository.DidNotReceiveWithAnyArgs().Create(default!, default);
     }

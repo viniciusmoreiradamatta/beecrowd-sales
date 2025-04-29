@@ -1,0 +1,98 @@
+services:
+  gateway:
+    image: ocelot-gateway
+    build:
+      context: .
+      dockerfile: src/Gateway/Dockerfile
+    container_name: ocelot-gateway
+    ports:
+      - "0.0.0.0:7777:7777"
+    environment:
+      - ASPNETCORE_URLS=http://+:7777
+    depends_on:
+      - sales-api
+    networks:
+      - evaluation-network
+
+  sales-api:
+    image: sales-api
+    build:
+      context: .
+      dockerfile: src/SalesApi/Dockerfile
+    container_name: sales-api
+    depends_on:
+      - db
+      - rabbitmq
+      - redisservice
+
+    ports:
+      - "8090:8090"
+    environment:
+     ConnectionStrings__SalesApiDb: Host=db;Database=SalesApiDb;Username=postgres;Password=admin
+     RABBITMQ__PREFETCHCOUNT: 2000
+     RABBITMQ__HOSTNAME: rabbitmq
+     RABBITMQ__PORT: 5672
+     RABBITMQ__USERNAME: userMaster
+     RABBITMQ__PASSWORD: p455w0rd
+     RABBITMQ__VIRTUALHOST: main
+     RABBITMQ__DISPATCHCONSUMERSASYNC: "true"
+     REDIS__INSTANCENAME: sales_api_cache
+     REDIS__CONFIGURATION: redisservice:6379,password=Redi5p455w0rd!,abortConnect=false
+    networks:
+      - evaluation-network
+  
+  db:
+    image: postgres:latest
+    container_name: db
+    environment:
+      POSTGRES_DB: SalesApiDb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: admin
+    ports:
+      - "5432:5432"
+    networks:
+      - evaluation-network
+
+  rabbitmq:
+   hostname: rabbitmq
+   build:
+    context: ./rabbit
+   ports:
+    - "15672:15672"
+    - "5672:5672" 
+    - "15692:15692" 
+   networks:
+    - evaluation-network
+
+  prometheus:
+   image: prom/prometheus
+   ports:
+     - "9090:9090"
+   volumes:
+     - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+   networks:
+    - evaluation-network
+
+  grafana:
+   image: grafana/grafana:8.0.5-ubuntu
+   environment: { "TZ": "America/Sao_Paulo" }
+   ports:
+     - "3000:3000"
+   volumes:
+     - ./grafana/data/:/var/lib/grafana
+   networks:
+    - evaluation-network
+
+  redisservice:
+    image: redis
+    command: redis-server --requirepass Redi5p455w0rd!
+    ports:
+      - "6379:6379"
+    networks:
+    - evaluation-network
+
+
+networks:
+  evaluation-network:
+    external: true
+  
