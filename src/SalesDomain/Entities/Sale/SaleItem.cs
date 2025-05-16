@@ -1,11 +1,12 @@
-﻿using SalesDomain.Validators.Sales;
+﻿using SalesDomain.Entities.Sale.Specifications.TaxSpecifications;
+using SalesDomain.Validators.Sales;
 
 namespace SalesDomain.Entities.Sale;
 
 public class SaleItem : Entity
 {
-    private const decimal SpecialIva = 0.20m;
-    private const decimal StandartIva = 0.10m;
+    public readonly decimal SpecialIva = 0.20m;
+    public readonly decimal StandartIva = 0.10m;
 
     private SaleItem(Guid id, Guid productId, Guid saleId, int quantity, decimal unitPrice, bool isCancelled) : base(id)
     {
@@ -27,18 +28,7 @@ public class SaleItem : Entity
 
     private void ApplyTaxes()
     {
-        var taxRate = 0.0m;
-
-        switch (Quantity)
-        {
-            case >= 4 and < 10:
-                taxRate = StandartIva;
-                break;
-
-            case >= 10:
-                taxRate = SpecialIva;
-                break;
-        }
+        var taxRate = new TaxRateSpecification().GetTaxRate(this);
 
         ValueMonetaryTaxApplied = UnitPrice * Quantity * taxRate;
         Total = UnitPrice * Quantity + ValueMonetaryTaxApplied;

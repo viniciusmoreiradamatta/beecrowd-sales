@@ -1,6 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
 using NSubstitute;
-using NSubstitute.ExceptionExtensions;
 using SalesApplication.Commands.Sales.Create;
 using SalesDomain.Abstractions;
 using SalesDomain.Entities.Sale;
@@ -31,7 +30,7 @@ namespace SalesTests.Application.Commands.Sales.Create
         {
             // Arrange
             var request = SaleFaker.CreateValidRequest();
-            request.Items[0].Quantity = 0;
+            request.Items[0].ProductId = Guid.Empty;
 
             // Act
             var result = await _sut.Handle(request, CancellationToken.None);
